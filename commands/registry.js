@@ -9,7 +9,7 @@
 const sections = {
   General: {
     icon: '◈',
-    commands: ['.menu', '.showall', '.ping', '.alive', '.tts <text>', '.owner', '.joke', '.quote', '.weather <city>', '.attp <text>', '.trt <text> <lang>', '.ss <link>', '.url', '.dp', '.wow']
+    commands: ['.menu', '.showall', '.ai <question>', '.ping', '.alive', '.tts <text>', '.owner', '.joke', '.quote', '.weather <city>', '.attp <text>', '.trt <text> <lang>', '.ss <link>', '.url', '.dp', '.wow']
   },
   Admin: {
     icon: '♜',

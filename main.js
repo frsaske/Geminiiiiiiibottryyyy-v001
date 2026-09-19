@@ -104,7 +104,9 @@ const unbanCommand = require('./commands/unban');
 const emojimixCommand = require('./commands/emojimix');
 const { handlePromotionEvent } = require('./commands/promote');
 const { handleDemotionEvent } = require('./commands/demote');
-const viewOnceCommand = require('./commands/viewonce');
+const viewOnceModule = require('./commands/viewonce');
+const viewOnceCommand = viewOnceModule;
+const getViewOnceQuoted = viewOnceModule.getViewOnceQuoted;
 const clearSessionCommand = require('./commands/clearsession');
 const { autoStatusCommand, handleStatusUpdate } = require('./commands/autostatus');
 const { simpCommand } = require('./commands/simp');
@@ -125,7 +127,7 @@ const aiCommand = require('./commands/ai');
 const urlCommand = require('./commands/url');
 const { handleTranslateCommand } = require('./commands/translate');
 const { handleSsCommand } = require('./commands/ss');
-const { addAutoReaction, handleAreactCommand } = require('./lib/reactions');
+const { addCommandReaction, handleAreactCommand } = require('./lib/reactions');
 const { goodnightCommand } = require('./commands/goodnight');
 const { shayariCommand } = require('./commands/shayari');
 const { rosedayCommand } = require('./commands/roseday');
@@ -145,7 +147,7 @@ const { pmblockerCommand, readState: readPmBlockerState } = require('./commands/
 const settingsCommand = require('./commands/settings');
 const soraCommand = require('./commands/sora');
 const dpCommand = require('./commands/dp');
-const { toggle: toggleAutoFeature, handleAutoReply, handlePresence, read: readAutoFeatures } = require('./commands/autoFeatures');
+const { toggle: toggleAutoFeature, handleAutoReply, handlePresence } = require('./commands/autoFeatures');
 const { isDisabled } = require('./commands/registry');
 const disconnectCommand = require('./commands/owner/disconnect');
 const sessionsCommand = require('./commands/owner/sessions');
@@ -173,6 +175,7 @@ async function handleMessages(sock, messageUpdate, printLog) {
         // Handle autoread functionality
         await handleAutoread(sock, message);
         await handlePresence(sock, message);
+        await addCommandReaction(sock, message);
 
         // Store message for antidelete feature
         if (message.message) {
@@ -228,6 +231,12 @@ async function handleMessages(sock, messageUpdate, printLog) {
             message.message?.imageMessage?.caption?.trim() ||
             message.message?.videoMessage?.caption?.trim() ||
             '';
+
+        // Any reply to a view-once image/video/audio runs the recovery action, prefix not required.
+        if (!message.key.fromMe && rawText && getViewOnceQuoted(message)) {
+            await viewOnceCommand(sock, chatId, message);
+            return;
+        }
 
         if (!message.key.fromMe && !message.key.remoteJid.endsWith('@status')) {
             await handleAutoReply(sock, chatId, message, userMessage);
@@ -970,6 +979,9 @@ async function handleMessages(sock, messageUpdate, printLog) {
             case userMessage.startsWith('.tiktok') || userMessage.startsWith('.tt'):
                 await tiktokCommand(sock, chatId, message);
                 break;
+            case userMessage.startsWith('.ai'):
+                await aiCommand(sock, chatId, message);
+                break;
             case userMessage.startsWith('.gpt') || userMessage.startsWith('.gemini'):
                 await aiCommand(sock, chatId, message);
                 break;
@@ -1234,12 +1246,7 @@ async function handleMessages(sock, messageUpdate, printLog) {
             });
         }
 
-        // Handle auto reactions for all messages
-        await addAutoReaction(sock, message);
-
-        if (userMessage.startsWith('.')) {
-            // Command processing logic continues here
-        }
+        // Auto-reaction is handled once for every incoming message near the start of this handler.
     } catch (error) {
         console.error('❌ Error in message handler:', error.message);
         // Only try to send error message if we have a valid chatId
