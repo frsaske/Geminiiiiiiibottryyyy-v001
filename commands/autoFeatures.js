@@ -24,21 +24,27 @@ function getHistory(chatId) { return historyByChat.get(chatId) || []; }
 async function generateGemini(prompt) {
   const key = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   if (!key) return null;
-  const models = [process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite', 'gemini-3.5-flash-lite'];
+  const models = [process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-2.5-flash'];
   let lastError;
   for (const model of [...new Set(models)]) {
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
       const response = await axios.post(url, {
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: { temperature: 0.7, maxOutputTokens: 500 }
-      }, { timeout: 45000 });
+      }, {
+        timeout: 45000,
+        headers: /^(ya29\.|AQ\.)/.test(key)
+          ? { Authorization: `Bearer ${key}` }
+          : { 'x-goog-api-key': key }
+      });
       const answer = response.data?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('').trim();
       if (answer) return answer;
       lastError = new Error(`No response from ${model}`);
     } catch (error) { lastError = error; }
   }
-  console.error('[Gemini] all models failed:', lastError?.response?.data || lastError?.message);
+  const detail = lastError?.response?.data?.error || lastError?.message || 'unknown error';
+  console.error('[Gemini] all models failed:', detail);
   return null;
 }
 
