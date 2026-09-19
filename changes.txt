@@ -1,0 +1,5 @@
+Changes made to the project:
+
+File: commands/antidelete.js
+1. Added explicit error logging in the Anti-ViewOnce forwarding logic to diagnose silent failures.
+2. Improved view-once message detection logic to support additional message structures (e.g., viewOnceMessageV2Extension), ensuring automatic forwarding works for more message types.

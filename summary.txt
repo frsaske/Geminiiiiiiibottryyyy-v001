@@ -1,0 +1,9 @@
+Fixes Summary:
+1. Autoreact Consistency:
+   - Unified autoreact storage to use `data/autoFeatures.json` consistently.
+   - Refactored `lib/reactions.js` to read/save autoreact state using `commands/autoFeatures.js` utility functions, fixing the inconsistency where `userGroupData.json` and `autoFeatures.json` were used interchangeably.
+   - Now `autoreact` correctly respects the global state stored in `data/autoFeatures.json`.
+
+2. Autoreply Fix:
+   - Refactored `handleAutoReply` in `commands/autoFeatures.js` to replace the unreliable GROQ API (which required an environment variable not properly configured or provided) with a reliable Gemini API endpoint, ensuring the bot can reply automatically to messages.
+   - Simplified the implementation to use REST API instead of requiring additional Node packages, making the fix lightweight and robust.
